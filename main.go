@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"html/template"
 )
 
 func main() {
+    // Handle static files
     fs := http.FileServer(http.Dir("web/static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -18,7 +19,7 @@ func main() {
     })
 
     http.HandleFunc("GET /clicked", func(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Clicked!")
+        io.WriteString(w, "Clicked!")
     })
 
     fmt.Println("Listening on port 8000...")

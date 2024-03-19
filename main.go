@@ -4,12 +4,37 @@ import (
 	"fmt"
 	"io"
 	"log"
+    "time"
 	"net/http"
 	"html/template"
     "database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func addWorkout(db *sql.DB, name string, duration int) {
+    tx, err := db.Begin()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    stmt, err := tx.Prepare("insert into workouts(name, date, duration) values(?, ?, ?)")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer stmt.Close()
+
+    _, err = stmt.Exec(name, time.Now().Local(), duration)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = tx.Commit()
+    if err != nil {
+        log.Fatal(err)
+    }
+}
 
 func main() {
     db, err := sql.Open("sqlite3", "./ptlog.db")
@@ -21,7 +46,7 @@ func main() {
 
     stmt := `
     create table if not exists workouts(
-        id interger not null primary key,
+        id integer primary key autoincrement,
         date datetime, name text,
         duration integer
     );
@@ -32,6 +57,8 @@ func main() {
         log.Printf("%q: %s\n", err, stmt)
         return
     }
+
+    addWorkout(db, "run", 30)
 
     fs := http.FileServer(http.Dir("web/static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))

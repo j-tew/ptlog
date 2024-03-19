@@ -6,10 +6,33 @@ import (
 	"log"
 	"net/http"
 	"html/template"
+    "database/sql"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-    // Handle static files
+    db, err := sql.Open("sqlite3", "./ptlog.db")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer db.Close()
+
+    stmt := `
+    create table if not exists workouts(
+        id interger not null primary key,
+        date datetime, name text,
+        duration integer
+    );
+    delete from workouts;
+    `
+    _, err = db.Exec(stmt)
+    if err != nil {
+        log.Printf("%q: %s\n", err, stmt)
+        return
+    }
+
     fs := http.FileServer(http.Dir("web/static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 

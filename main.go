@@ -18,7 +18,7 @@ type model struct {
 }
 
 type workout struct {
-    name string
+    Name string
     day, month, year int
     duration int
 }
@@ -63,7 +63,7 @@ func (m *model) addWorkout(w workout) error {
 
     defer stmt.Close()
 
-    _, err = stmt.Exec(w.name, w.day, w.month, w.year, w.duration)
+    _, err = stmt.Exec(w.Name, w.day, w.month, w.year, w.duration)
     if err != nil {
         return err
     }
@@ -75,29 +75,28 @@ func (m *model) addWorkout(w workout) error {
     return nil
 }
 
-func (m *model) getWorkouts() error {
+func (m *model) getWorkouts() ([]workout, error) {
     db := m.DB
     rows, err := db.Query("select name, day, month, year, duration from workouts")
     if err != nil {
-        return err
+        return nil, err
     }
     defer rows.Close()
 
     var workouts []workout
     for rows.Next() {
         var w workout
-        err = rows.Scan(&w.name, &w.day, &w.month, &w.year, &w.duration)
+        err = rows.Scan(&w.Name, &w.day, &w.month, &w.year, &w.duration)
         if err != nil {
-            return err
+            return nil, err
         }
         workouts = append(workouts, w)
     }
     err = rows.Err()
     if err != nil {
-        log.Fatal(err)
+        return nil, err
     }
-    fmt.Println(workouts)
-    return nil
+    return workouts, nil
 }
 
 func main() {
@@ -110,14 +109,14 @@ func main() {
     defer m.DB.Close()
 
     year, month, day := time.Now().Date()
-    w := workout{name: "run", day: day, month: int(month), year: year, duration: 30}
+    wo := workout{Name: "run", day: day, month: int(month), year: year, duration: 30}
 
-    err = m.addWorkout(w)
+    err = m.addWorkout(wo)
     if err != nil {
         log.Fatal(err)
     }
 
-    err = m.getWorkouts()
+    workouts, err := m.getWorkouts()
     if err != nil {
         log.Fatal(err)
     }
@@ -125,9 +124,9 @@ func main() {
     fs := http.FileServer(http.Dir("web/static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { 
         tmpl := template.Must(template.ParseFiles("web/index.html"))
-        tmpl.Execute(w, nil)
+        tmpl.Execute(w, workouts)
     })
 
     http.HandleFunc("GET /clicked", func(w http.ResponseWriter, r *http.Request) {

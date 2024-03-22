@@ -20,6 +20,9 @@
             <hgroup>
                 <h2>Log your PT!</h2>
                 <p>This simple webapp is an easy way for you to track your PT activity.</p>
+                {{range .}}
+                <p>{{.Name}}</p>
+                {{end}}
             </hgroup>
             <button hx-get="/clicked">Click Me!</button>
         </main>

@@ -19,8 +19,8 @@ type model struct {
 
 type workout struct {
     Name string
-    day, month, year int
-    duration int
+    Day, Month, Year int
+    Duration int
 }
 
 func (m *model) setup() error {
@@ -63,7 +63,7 @@ func (m *model) addWorkout(w workout) error {
 
     defer stmt.Close()
 
-    _, err = stmt.Exec(w.Name, w.day, w.month, w.year, w.duration)
+    _, err = stmt.Exec(w.Name, w.Day, w.Month, w.Year, w.Duration)
     if err != nil {
         return err
     }
@@ -86,7 +86,7 @@ func (m *model) getWorkouts() ([]workout, error) {
     var workouts []workout
     for rows.Next() {
         var w workout
-        err = rows.Scan(&w.Name, &w.day, &w.month, &w.year, &w.duration)
+        err = rows.Scan(&w.Name, &w.Day, &w.Month, &w.Year, &w.Duration)
         if err != nil {
             return nil, err
         }
@@ -109,7 +109,7 @@ func main() {
     defer m.DB.Close()
 
     year, month, day := time.Now().Date()
-    wo := workout{Name: "run", day: day, month: int(month), year: year, duration: 30}
+    wo := workout{Name: "run", Day: day, Month: int(month), Year: year, Duration: 30}
 
     err = m.addWorkout(wo)
     if err != nil {

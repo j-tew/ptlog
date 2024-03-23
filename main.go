@@ -1,13 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-    "time"
-	"net/http"
+
+	// "time"
+	"database/sql"
 	"html/template"
-    "database/sql"
+	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -49,37 +50,44 @@ func (m *model) setup() error {
     return nil
 }
 
-func (m *model) addWorkout(w workout) error {
+func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
+    var wo workout
+
+    err := json.NewDecoder(r.Body).Decode(&wo)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
     db := m.DB
     tx, err := db.Begin()
     if err != nil {
-        return err
+        log.Fatal(err)
     }
 
     stmt, err := tx.Prepare("insert into workouts(name, day, month, year, duration) values(?, ?, ?, ?, ?)")
     if err != nil {
-        return err
+        log.Fatal(err)
     }
 
     defer stmt.Close()
 
-    _, err = stmt.Exec(w.Name, w.Day, w.Month, w.Year, w.Duration)
+    _, err = stmt.Exec(wo.Name, wo.Day, wo.Month, wo.Year, wo.Duration)
     if err != nil {
-        return err
+        log.Fatal(err)
     }
 
     err = tx.Commit()
     if err != nil {
-        return err
+        log.Fatal(err)
     }
-    return nil
 }
 
-func (m *model) getWorkouts() ([]workout, error) {
+func (m *model) getWorkouts() []workout {
     db := m.DB
     rows, err := db.Query("select name, day, month, year, duration from workouts")
     if err != nil {
-        return nil, err
+        log.Fatal(err)
     }
     defer rows.Close()
 
@@ -88,15 +96,15 @@ func (m *model) getWorkouts() ([]workout, error) {
         var w workout
         err = rows.Scan(&w.Name, &w.Day, &w.Month, &w.Year, &w.Duration)
         if err != nil {
-            return nil, err
+	    log.Fatal(err)
         }
         workouts = append(workouts, w)
     }
     err = rows.Err()
     if err != nil {
-        return nil, err
+        log.Fatal(err)
     }
-    return workouts, nil
+    return workouts
 }
 
 func main() {
@@ -108,30 +116,20 @@ func main() {
     }
     defer m.DB.Close()
 
-    year, month, day := time.Now().Date()
-    wo := workout{Name: "run", Day: day, Month: int(month), Year: year, Duration: 30}
-
-    err = m.addWorkout(wo)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    workouts, err := m.getWorkouts()
-    if err != nil {
-        log.Fatal(err)
-    }
-
     fs := http.FileServer(http.Dir("web/static"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
 
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { 
         tmpl := template.Must(template.ParseFiles("web/index.html"))
-        tmpl.Execute(w, workouts)
+        tmpl.Execute(w, m.getWorkouts())
     })
 
-    http.HandleFunc("GET /clicked", func(w http.ResponseWriter, r *http.Request) {
-        io.WriteString(w, "Clicked!")
+    http.HandleFunc("GET /workout", func(w http.ResponseWriter, r *http.Request) {
+        tmpl := template.Must(template.ParseFiles("web/modal.html"))
+        tmpl.Execute(w, nil)
     })
+
+    http.HandleFunc("POST /workouts", m.addWorkout)
 
     fmt.Println("Listening on port 8000...")
     log.Fatal(http.ListenAndServe(":8000", nil))

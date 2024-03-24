@@ -6,6 +6,7 @@
         <meta name="color-scheme" content="light dark" />
         <link rel="stylesheet" href="/static/css/pico.css">
         <script src="/static/js/htmx.js"></script>
+        <script src="/static/js/modal.js"></script>
         <title>ptlog</title>
     </head>
     <body>
@@ -42,7 +43,25 @@
                 <tfoot>
                 </tfoot>
             </table>
-            <button hx-get="/workout" hx-target="body" hx-swap="beforeend">Add Workout</button>
+            <button onclick="toggleModal(event)" data-target="modal">Add Workout</button>
+            <dialog id="modal">
+              <article>
+                <h2>Add a workout</h2>
+                <form method="dialog">
+                <input type="text" name="workout" placeholder="Workout" aria-label="Text" />
+                <input type="number" name="duration" placeholder="Duration" aria-label="Duration" />
+                <input type="number" name="month" placeholder="Month" aria-label="Month" />
+                <input type="number" name="day" placeholder="Day" aria-label="Day" />
+                <input type="number" name="year" placeholder="Year" aria-label="Year" />
+                </form>
+                <footer>
+                  <button role="button" class="secondary" data-target="modal" onclick="toggleModal(event)">
+                    Cancel
+                  </button>
+                  <button autofocus data-target="modal" onclick="toggleModal(event)" hx-post="/workouts">Confirm</button>
+                </footer>
+              </article>
+            </dialog>
         </main>
     </body>
 </html>

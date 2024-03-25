@@ -56,6 +56,7 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
     err := json.NewDecoder(r.Body).Decode(&wo)
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
+        log.Println(r.Body)
         return
     }
 
@@ -124,12 +125,7 @@ func main() {
         tmpl.Execute(w, m.getWorkouts())
     })
 
-    http.HandleFunc("GET /workout", func(w http.ResponseWriter, r *http.Request) {
-        tmpl := template.Must(template.ParseFiles("web/modal.html"))
-        tmpl.Execute(w, nil)
-    })
-
-    http.HandleFunc("POST /workouts", m.addWorkout)
+    http.HandleFunc("POST /workout", m.addWorkout)
 
     fmt.Println("Listening on port 8000...")
     log.Fatal(http.ListenAndServe(":8000", nil))

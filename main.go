@@ -20,8 +20,8 @@ type model struct {
 
 type workout struct {
     Name string
-    Day, Month, Year int
     Duration int
+    Day, Month, Year int
 }
 
 func (m *model) setup() error {
@@ -56,7 +56,7 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
     err := json.NewDecoder(r.Body).Decode(&wo)
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
-        log.Println(r.Body)
+        log.Println(err, r.Body)
         return
     }
 

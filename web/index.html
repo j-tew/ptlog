@@ -6,6 +6,7 @@
         <meta name="color-scheme" content="light dark" />
         <link rel="stylesheet" href="/static/css/pico.css">
         <script src="/static/js/htmx.js"></script>
+        <script src="/static/js/hyperscript.js"></script>
         <script src="/static/js/modal.js"></script>
         <title>ptlog</title>
     </head>
@@ -19,7 +20,7 @@
         </header>
         <main class="container">
             <hgroup>
-                <h2>Log your PT!</h2>
+                <h3>Log your PT!</h3>
                 <p>This simple webapp is an easy way for you to track your PT activity.</p>
             </hgroup>
             <h3>Workouts</h3>
@@ -47,15 +48,13 @@
             <dialog id="modal">
                 <article>
                     <h2>Add a workout</h2>
-                    <form hx-post="/workout">
-                        <input type="text" name="workout" placeholder="Workout" />
+                    <form hx-post="/workout" hx-swap="none">
+                        <input type="text" name="name" placeholder="Workout" />
                         <input type="number" name="duration" placeholder="Duration" />
                         <input type="number" name="month" placeholder="Month" />
                         <input type="number" name="day" placeholder="Day" />
                         <input type="number" name="year" placeholder="Year" />
-                        <button onclick="toggleModal(event)" type="submit" data-target="modal">
-                            Confirm
-                        </button>
+                        <input type="submit" />
                     </form>
               </article>
             </dialog>

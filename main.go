@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -19,9 +18,7 @@ type model struct {
 }
 
 type workout struct {
-    Name string
-    Duration int
-    Day, Month, Year int
+    name, duration, day, month, year string
 }
 
 func (m *model) setup() error {
@@ -51,13 +48,18 @@ func (m *model) setup() error {
 }
 
 func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
-    var wo workout
-
-    err := json.NewDecoder(r.Body).Decode(&wo)
+    err := r.ParseForm()
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
-        log.Println(err, r.Body)
         return
+    }
+    
+    wo := workout{
+        name: r.Form.Get("name"),
+        day: r.Form.Get("day"),
+        month: r.Form.Get("month"),
+        year: r.Form.Get("year"),
+        duration: r.Form.Get("duration"),
     }
 
     db := m.DB
@@ -73,7 +75,7 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
 
     defer stmt.Close()
 
-    _, err = stmt.Exec(wo.Name, wo.Day, wo.Month, wo.Year, wo.Duration)
+    _, err = stmt.Exec(wo.name, wo.day, wo.month, wo.year, wo.duration)
     if err != nil {
         log.Fatal(err)
     }
@@ -95,7 +97,7 @@ func (m *model) getWorkouts() []workout {
     var workouts []workout
     for rows.Next() {
         var w workout
-        err = rows.Scan(&w.Name, &w.Day, &w.Month, &w.Year, &w.Duration)
+        err = rows.Scan(&w.name, &w.day, &w.month, &w.year, &w.duration)
         if err != nil {
 	    log.Fatal(err)
         }

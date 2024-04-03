@@ -32,7 +32,7 @@
                         <th scope="col">Duration (Minutes)</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="workouts">
                     {{range .}}
                     <tr>
                         <th scope="row">{{.Name}}</th>
@@ -48,7 +48,7 @@
             <dialog id="modal">
                 <article>
                     <h2>Add a workout</h2>
-                    <form hx-post="/workout" hx-swap="none">
+                    <form hx-post="/workout" hx-target="#workouts" hx-swap="beforeend">
                         <input type="text" name="name" placeholder="Workout" />
                         <input type="number" name="duration" placeholder="Duration" />
                         <input type="number" name="month" placeholder="Month" />

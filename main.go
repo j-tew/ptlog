@@ -18,7 +18,7 @@ type model struct {
 }
 
 type workout struct {
-    name, duration, day, month, year string
+    Name, Duration, Day, Month, Year string
 }
 
 func (m *model) setup() error {
@@ -47,7 +47,7 @@ func (m *model) setup() error {
     return nil
 }
 
-func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
+func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
     err := r.ParseForm()
     if err != nil {
         http.Error(w, err.Error(), http.StatusBadRequest)
@@ -55,11 +55,11 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
     }
     
     wo := workout{
-        name: r.Form.Get("name"),
-        day: r.Form.Get("day"),
-        month: r.Form.Get("month"),
-        year: r.Form.Get("year"),
-        duration: r.Form.Get("duration"),
+        Name: r.Form.Get("name"),
+        Day: r.Form.Get("day"),
+        Month: r.Form.Get("month"),
+        Year: r.Form.Get("year"),
+        Duration: r.Form.Get("duration"),
     }
 
     db := m.DB
@@ -75,7 +75,7 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
 
     defer stmt.Close()
 
-    _, err = stmt.Exec(wo.name, wo.day, wo.month, wo.year, wo.duration)
+    _, err = stmt.Exec(wo.Name, wo.Day, wo.Month, wo.Year, wo.Duration)
     if err != nil {
         log.Fatal(err)
     }
@@ -84,6 +84,16 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request)  {
     if err != nil {
         log.Fatal(err)
     }
+
+    row := fmt.Sprintf(
+        "<tr><th scope='row'>%s</th><td>%s/%s/%s</td><td>%s</td></tr>",
+        wo.Name,
+        wo.Day,
+        wo.Month,
+        wo.Year,
+        wo.Duration,
+    )
+    fmt.Fprintf(w, row)
 }
 
 func (m *model) getWorkouts() []workout {
@@ -97,7 +107,7 @@ func (m *model) getWorkouts() []workout {
     var workouts []workout
     for rows.Next() {
         var w workout
-        err = rows.Scan(&w.name, &w.day, &w.month, &w.year, &w.duration)
+        err = rows.Scan(&w.Name, &w.Day, &w.Month, &w.Year, &w.Duration)
         if err != nil {
 	    log.Fatal(err)
         }

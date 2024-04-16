@@ -64,9 +64,8 @@
                     <h2>Add a workout</h2>
                     <form
                         id="workout-form"
-                        hx-post="/workout"
+                        hx-post="/workouts"
                         hx-target="#workouts"
-                        hx-swap="beforeend"
                         _="on submit add .modal-is-closing to <html /> then
                               wait 400ms then
                               call #modal.close() then

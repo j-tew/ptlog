@@ -89,20 +89,23 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     }
 
-    row := fmt.Sprintf(
-        "<tr><th scope='row'>%s</th><td>%s</td><td>%d/%d/%d</td><td><i class='fa-solid fa-trash'></i></td></tr>",
-        wo.Name,
-        wo.Duration,
-        wo.Month,
-        wo.Day,
-        wo.Year,
-    )
-    fmt.Fprintf(w, row)
+    var html string
+    for _, wo := range m.allWorkouts() {
+        html += fmt.Sprintf(
+            "<tr><th scope='row'>%s</th><td>%s</td><td>%d/%d/%d</td><td><i class='fa-solid fa-trash'></i></td></tr>",
+            wo.Name,
+            wo.Duration,
+            wo.Month,
+            wo.Day,
+            wo.Year,
+        )
+    }
+    fmt.Fprint(w, html)
 }
 
-func (m *model) getWorkouts() []workout {
+func (m *model) allWorkouts() []workout {
     db := m.DB
-    rows, err := db.Query("select name, duration, date from workouts")
+    rows, err := db.Query("select name, duration, date from workouts order by date desc")
     if err != nil {
         log.Fatal(err)
     }
@@ -112,10 +115,12 @@ func (m *model) getWorkouts() []workout {
     for rows.Next() {
         var w workout
         var d time.Time
+
         err = rows.Scan(&w.Name, &w.Duration, &d)
         if err != nil {
 	    log.Fatal(err)
         }
+        
         w.Month = int(d.Month())
         w.Day = d.Day()
         w.Year = d.Year()
@@ -142,10 +147,10 @@ func main() {
 
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { 
         tmpl := template.Must(template.ParseFiles("web/index.html"))
-        tmpl.Execute(w, m.getWorkouts())
+        tmpl.Execute(w, m.allWorkouts())
     })
 
-    http.HandleFunc("POST /workout", m.addWorkout)
+    http.HandleFunc("POST /workouts", m.addWorkout)
 
     fmt.Println("Listening on port 8000...")
     log.Fatal(http.ListenAndServe(":8000", nil))

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	// "time"
+	"time"
 	"database/sql"
 	"html/template"
 	"net/http"
@@ -18,7 +18,8 @@ type model struct {
 }
 
 type workout struct {
-    Name, Duration, Day, Month, Year string
+    Name, Duration string
+    Day, Month, Year int
 }
 
 func (m *model) setup() error {
@@ -31,10 +32,8 @@ func (m *model) setup() error {
     create table if not exists workouts(
         id integer primary key autoincrement,
         name text,
-        day integer,
-        month integer,
-        year integer,
-        duration integer
+        duration integer,
+        date datetime
     );
     delete from workouts;
     `
@@ -53,13 +52,18 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
+
+    d, err := time.Parse(time.DateOnly, r.Form.Get("date"))
+    if err != nil {
+        log.Fatal("Invalid Date")
+    }
     
     wo := workout{
         Name: r.Form.Get("name"),
-        Day: r.Form.Get("day"),
-        Month: r.Form.Get("month"),
-        Year: r.Form.Get("year"),
         Duration: r.Form.Get("duration"),
+        Month: int(d.Month()),
+        Day: d.Day(),
+        Year: d.Year(),
     }
 
     db := m.DB
@@ -68,14 +72,14 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     }
 
-    stmt, err := tx.Prepare("insert into workouts(name, day, month, year, duration) values(?, ?, ?, ?, ?)")
+    stmt, err := tx.Prepare("insert into workouts(name, duration, date) values(?, ?, ?)")
     if err != nil {
         log.Fatal(err)
     }
 
     defer stmt.Close()
 
-    _, err = stmt.Exec(wo.Name, wo.Day, wo.Month, wo.Year, wo.Duration)
+    _, err = stmt.Exec(wo.Name, wo.Duration, d)
     if err != nil {
         log.Fatal(err)
     }
@@ -86,19 +90,19 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
     }
 
     row := fmt.Sprintf(
-        "<tr><th scope='row'>%s</th><td>%s/%s/%s</td><td>%s</td></tr>",
+        "<tr><th scope='row'>%s</th><td>%s</td><td>%d/%d/%d</td><td><i class='fa-solid fa-trash'></i></td></tr>",
         wo.Name,
-        wo.Day,
-        wo.Month,
-        wo.Year,
         wo.Duration,
+        wo.Month,
+        wo.Day,
+        wo.Year,
     )
     fmt.Fprintf(w, row)
 }
 
 func (m *model) getWorkouts() []workout {
     db := m.DB
-    rows, err := db.Query("select name, day, month, year, duration from workouts")
+    rows, err := db.Query("select name, duration, date from workouts")
     if err != nil {
         log.Fatal(err)
     }
@@ -107,10 +111,14 @@ func (m *model) getWorkouts() []workout {
     var workouts []workout
     for rows.Next() {
         var w workout
-        err = rows.Scan(&w.Name, &w.Day, &w.Month, &w.Year, &w.Duration)
+        var d time.Time
+        err = rows.Scan(&w.Name, &w.Duration, &d)
         if err != nil {
 	    log.Fatal(err)
         }
+        w.Month = int(d.Month())
+        w.Day = d.Day()
+        w.Year = d.Year()
         workouts = append(workouts, w)
     }
     err = rows.Err()

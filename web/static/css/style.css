@@ -1,0 +1,4 @@
+#delete:hover {
+    color: var(--pico-contrast-hover);
+    cursor: pointer;
+}

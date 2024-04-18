@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light dark" />
+        <link rel="stylesheet" href="/static/css/style.css">
         <link rel="stylesheet" href="/static/css/pico.css">
         <script src="/static/js/htmx.js"></script>
         <script src="/static/js/hyperscript.js"></script>
@@ -39,7 +40,9 @@
                         <th scope="row">{{.Name}}</th>
                         <td>{{.Duration}}</td>
                         <td>{{.Month}}/{{.Day}}/{{.Year}}</td>
-                        <td><i class="fa-solid fa-trash"></i></td>
+                        <td>
+                            <i id="delete" class="fa-solid fa-trash" hx-delete="/workouts/{{.Id}}" hx-target="#workouts"></i>
+                        </td>
                     </tr>
                     {{end}}
                 </tbody>

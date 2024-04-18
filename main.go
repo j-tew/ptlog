@@ -19,7 +19,7 @@ type model struct {
 
 type workout struct {
     Name, Duration string
-    Day, Month, Year int
+    Id, Day, Month, Year int
 }
 
 func (m *model) setup() error {
@@ -72,7 +72,7 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     }
 
-    stmt, err := tx.Prepare("insert into workouts(name, duration, date) values(?, ?, ?)")
+    stmt, err := tx.Prepare("insert into workouts(name, duration, date) values(?, ?, ?);")
     if err != nil {
         log.Fatal(err)
     }
@@ -92,12 +92,18 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
     var html string
     for _, wo := range m.allWorkouts() {
         html += fmt.Sprintf(
-            "<tr><th scope='row'>%s</th><td>%s</td><td>%d/%d/%d</td><td><i class='fa-solid fa-trash'></i></td></tr>",
+            `<tr>
+                <th scope="row">%s</th>
+                <td>%s</td>
+                <td>%d/%d/%d</td>
+                <td><i id="delete" class="fa-solid fa-trash" hx-delete="/workouts/%d"hx-target="#workouts"></i></td>
+            </tr>`,
             wo.Name,
             wo.Duration,
             wo.Month,
             wo.Day,
             wo.Year,
+            wo.Id,
         )
     }
     fmt.Fprint(w, html)
@@ -105,7 +111,7 @@ func (m *model) addWorkout(w http.ResponseWriter, r *http.Request) {
 
 func (m *model) allWorkouts() []workout {
     db := m.DB
-    rows, err := db.Query("select name, duration, date from workouts order by date desc")
+    rows, err := db.Query("select id, name, duration, date from workouts order by date desc;")
     if err != nil {
         log.Fatal(err)
     }
@@ -116,7 +122,7 @@ func (m *model) allWorkouts() []workout {
         var w workout
         var d time.Time
 
-        err = rows.Scan(&w.Name, &w.Duration, &d)
+        err = rows.Scan(&w.Id, &w.Name, &w.Duration, &d)
         if err != nil {
 	    log.Fatal(err)
         }
@@ -131,6 +137,58 @@ func (m *model) allWorkouts() []workout {
         log.Fatal(err)
     }
     return workouts
+}
+
+func (m *model) deleteWorkout(w http.ResponseWriter, r *http.Request, id string) {
+
+    db := m.DB
+    tx, err := db.Begin()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    stmt, err := tx.Prepare("delete from workouts where id=?;")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer stmt.Close()
+
+    _, err = stmt.Exec(id)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = tx.Commit()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    var html string
+    for _, wo := range m.allWorkouts() {
+        html += fmt.Sprintf(
+            `<tr>
+                <th scope="row">%s</th>
+                <td>%s</td>
+                <td>%d/%d/%d</td>
+                <td><i id="delete" class="fa-solid fa-trash" hx-delete="/workouts/%d" hx-target="#workouts"></i></td>
+            </tr>`,
+            wo.Name,
+            wo.Duration,
+            wo.Month,
+            wo.Day,
+            wo.Year,
+            wo.Id,
+        )
+    }
+    fmt.Fprint(w, html)
+}
+
+func deleteHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        wid := r.URL.Path[len("/workouts/"):]
+        fn(w, r, wid)
+    }
 }
 
 func main() {
@@ -151,6 +209,7 @@ func main() {
     })
 
     http.HandleFunc("POST /workouts", m.addWorkout)
+    http.HandleFunc("DELETE /workouts/", deleteHandler(m.deleteWorkout))
 
     fmt.Println("Listening on port 8000...")
     log.Fatal(http.ListenAndServe(":8000", nil))

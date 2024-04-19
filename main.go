@@ -139,7 +139,8 @@ func (m *model) allWorkouts() []workout {
     return workouts
 }
 
-func (m *model) deleteWorkout(w http.ResponseWriter, r *http.Request, id string) {
+func (m *model) deleteWorkout(w http.ResponseWriter, r *http.Request) {
+    id := r.PathValue("id")
 
     db := m.DB
     tx, err := db.Begin()
@@ -184,13 +185,6 @@ func (m *model) deleteWorkout(w http.ResponseWriter, r *http.Request, id string)
     fmt.Fprint(w, html)
 }
 
-func deleteHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        wid := r.URL.Path[len("/workouts/"):]
-        fn(w, r, wid)
-    }
-}
-
 func main() {
     m := model{}
 
@@ -209,7 +203,7 @@ func main() {
     })
 
     http.HandleFunc("POST /workouts", m.addWorkout)
-    http.HandleFunc("DELETE /workouts/", deleteHandler(m.deleteWorkout))
+    http.HandleFunc("DELETE /workouts/{id}", m.deleteWorkout)
 
     fmt.Println("Listening on port 8000...")
     log.Fatal(http.ListenAndServe(":8000", nil))
